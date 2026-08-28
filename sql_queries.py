@@ -18,7 +18,8 @@ songplay_table_create = ("""CREATE TABLE IF NOT EXISTS songplays(
 	session_id INT NOT NULL, 
 	location VARCHAR,
 	user_agent TEXT
-)""")
+)
+""")
 
 user_table_create = ("""CREATE TABLE IF NOT EXISTS  users(
 	user_id  INT CONSTRAINT users_pk PRIMARY KEY,
@@ -26,7 +27,8 @@ user_table_create = ("""CREATE TABLE IF NOT EXISTS  users(
 	last_name  VARCHAR,
 	gender  CHAR(1),
 	level VARCHAR NOT NULL
-)""")
+)
+""")
 
 song_table_create = ("""CREATE TABLE  IF NOT EXISTS songs(
 	song_id VARCHAR CONSTRAINT songs_pk PRIMARY KEY,
@@ -34,7 +36,8 @@ song_table_create = ("""CREATE TABLE  IF NOT EXISTS songs(
 	artist_id  VARCHAR REFERENCES artists (artist_id),
 	year INT CHECK (year >= 0),
 	duration FLOAT
-)""")
+)
+""")
 
 artist_table_create = ("""CREATE TABLE  IF NOT EXISTS artists(
 	artist_id VARCHAR CONSTRAINT artist_pk PRIMARY KEY,
@@ -42,7 +45,8 @@ artist_table_create = ("""CREATE TABLE  IF NOT EXISTS artists(
 	location VARCHAR,
 	latitude DECIMAL(9,6),
 	longitude DECIMAL(9,6)
-)""")
+)
+""")
 
 time_table_create = ("""CREATE TABLE IF NOT EXISTS  time(
 	start_time  TIMESTAMP CONSTRAINT time_pk PRIMARY KEY,
@@ -52,11 +56,14 @@ time_table_create = ("""CREATE TABLE IF NOT EXISTS  time(
 	month INT NOT NULL CHECK (month >= 0),
 	year INT NOT NULL CHECK (year >= 0),
 	weekday VARCHAR NOT NULL
-)""")
+)
+""")
 
 # INSERT RECORDS
 
-songplay_table_insert = ("""INSERT INTO songplays VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s )
+# Make the INSERT into songplays explicit by listing columns (safer than relying on table order)
+songplay_table_insert = ("""INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """)
 
 
@@ -96,4 +103,3 @@ song_select = ("""
 
 create_table_queries = [user_table_create, artist_table_create, song_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
-
