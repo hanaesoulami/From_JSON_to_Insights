@@ -9,7 +9,7 @@ def create_database():
     Returns a connection to the target DB.
     """
     default_db = os.getenv("DB_DEFAULT_DB", "postgres")
-    db_name = os.getenv("DB_NAME", "sparkifydb")
+    db_name = os.getenv("DB_NAME", "studentdb")
     host = os.getenv("DB_HOST", "127.0.0.1")
     user = os.getenv("DB_USER", "postgres")
     password = os.getenv("DB_PASSWORD", "admin")
