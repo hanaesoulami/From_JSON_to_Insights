@@ -1,0 +1,87 @@
+name: Run ETL and export results
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-etl:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: studentdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d studentdb"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres -d studentdb && break
+            echo "Waiting for DB..." && sleep 2
+          done
+        env:
+          PGPASSWORD: admin
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas psycopg2-binary
+
+      - name: Run ETL
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: postgres
+          DB_PASSWORD: admin
+          DB_NAME: studentdb
+        run: |
+          python main.py
+
+      - name: Export results to CSV
+        run: |
+          python - <<'PY'
+          import pandas as pd, psycopg2, os
+          try:
+              conn = psycopg2.connect(host="127.0.0.1", dbname="sparkifydb", user="postgres", password="admin")
+          except Exception as e:
+              print('Could not connect to sparkifydb:', e)
+              raise
+          for tbl in ("users","songs","artists","time","songplays"):
+              try:
+                  df = pd.read_sql(f"SELECT * FROM {tbl} LIMIT 200", conn)
+                  df.to_csv(f"{tbl}.csv", index=False)
+                  print(f"Exported {tbl}.csv ({len(df)} rows)")
+              except Exception as e:
+                  print("Skipping", tbl, ":", e)
+          conn.close()
+          PY
+
+      - name: Upload CSV artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: etl-output-csv
+          path: |
+            users.csv
+            songs.csv
+            artists.csv
+            time.csv
+            songplays.csv
