@@ -57,13 +57,20 @@ jobs:
           python main.py
 
       - name: Export results to CSV
+        env:
+          DB_NAME: studentdb
+          DB_USER: postgres
+          DB_PASSWORD: admin
         run: |
           python - <<'PY'
           import pandas as pd, psycopg2, os
+          dbname = os.getenv("DB_NAME", "studentdb")
+          user = os.getenv("DB_USER", "postgres")
+          password = os.getenv("DB_PASSWORD", "admin")
           try:
-              conn = psycopg2.connect(host="127.0.0.1", dbname="sparkifydb", user="postgres", password="admin")
+              conn = psycopg2.connect(host="127.0.0.1", dbname=dbname, user=user, password=password)
           except Exception as e:
-              print('Could not connect to sparkifydb:', e)
+              print(f'Could not connect to {dbname}:', e)
               raise
           for tbl in ("users","songs","artists","time","songplays"):
               try:
@@ -85,3 +92,4 @@ jobs:
             artists.csv
             time.csv
             songplays.csv
+          if-no-files-found: ignore
