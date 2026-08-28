@@ -62,8 +62,9 @@ time_table_create = ("""CREATE TABLE IF NOT EXISTS  time(
 # INSERT RECORDS
 
 # Make the INSERT into songplays explicit by listing columns (safer than relying on table order)
-songplay_table_insert = ("""INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+songplay_table_insert = ("""
+INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """)
 
 
