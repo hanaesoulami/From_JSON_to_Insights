@@ -1,69 +1,56 @@
+# create_tables.py
+import os
 import psycopg2
 from sql_queries import create_table_queries, drop_table_queries
 
-
 def create_database():
     """
-
-    Establishes database connection and return's the connection and cursor references.
-    :return: return's (cur, conn) a cursor and connection reference
+    Connect to a default DB (DB_DEFAULT_DB) to create the target DB (DB_NAME).
+    Returns a connection to the target DB.
     """
-    # connect to default database
-    #conn = psycopg2.connect("host=127.0.0.1 dbname=studentdb user=student password=student")
-    conn = psycopg2.connect("host=127.0.0.1 dbname=studentdb user=postgres password=admin")
+    default_db = os.getenv("DB_DEFAULT_DB", "studentdb")
+    db_name = os.getenv("DB_NAME", "sparkifydb")
+    host = os.getenv("DB_HOST", "127.0.0.1")
+    user = os.getenv("DB_USER", "postgres")
+    password = os.getenv("DB_PASSWORD", "admin")
+    port = int(os.getenv("DB_PORT", 5432))
+
+    # connect to default DB to create target DB
+    conn = psycopg2.connect(host=host, dbname=default_db, user=user, password=password, port=port)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    
-    # create sparkify database with UTF8 encoding
-    cur.execute("DROP DATABASE IF EXISTS sparkifydb")
-    cur.execute("CREATE DATABASE sparkifydb WITH ENCODING 'utf8' TEMPLATE template0")
 
-    # close connection to default database
-    conn.close()    
-    
-    # connect to sparkify database
-    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=postgres password=admin")
-    cur = conn.cursor()
-    
-    return cur, conn
+    cur.execute(f"DROP DATABASE IF EXISTS {db_name}")
+    cur.execute(f"CREATE DATABASE {db_name} WITH ENCODING 'utf8' TEMPLATE template0")
 
-
-def drop_tables(cur, conn):
-    """
-    Run's all the drop table queries defined in sql_queries.py
-    :param cur: cursor to the database
-    :param conn: database connection reference
-    """
-    for query in drop_table_queries:
-        cur.execute(query)
-        conn.commit()
-
-
-def create_tables(cur, conn):
-    """
-    Run's all the create table queries defined in sql_queries.py
-    :param cur: cursor to the database
-    :param conn: database connection reference
-    """
-    for query in create_table_queries:
-        cur.execute(query)
-        conn.commit()
-
-
-def main():
-    """
-    Driver main function.
-    """
-    cur, conn = create_database()
-    
-    drop_tables(cur, conn)
-    print("Table dropped successfully!!")
-
-    create_tables(cur, conn)
-    print("Table created successfully!!")
-
+    cur.close()
     conn.close()
 
+    # connect to the newly created database
+    conn = psycopg2.connect(host=host, dbname=db_name, user=user, password=password, port=port)
+    return conn
+
+def drop_tables(conn):
+    with conn.cursor() as cur:
+        for query in drop_table_queries:
+            cur.execute(query)
+    conn.commit()
+
+def create_tables(conn):
+    with conn.cursor() as cur:
+        for query in create_table_queries:
+            cur.execute(query)
+    conn.commit()
+
+def main():
+    conn = create_database()
+    try:
+        drop_tables(conn)
+        print("Tables dropped successfully!!")
+        create_tables(conn)
+        print("Tables created successfully!!")
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()
